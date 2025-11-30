@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文小遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1; /* Indigo 500 */
+            --secondary-color: #4f46e5; /* Indigo 600 */
+            --card-back-color: #1e3a8a; /* Blue 900 */
+            --card-front-color: #ffffff;
+            --success-color: #10b981; /* Emerald 500 */
+            --danger-color: #ef4444; /* Red 500 */
+            --text-color: #1f2937;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #eef2ff; /* Indigo 50 */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better mobile view */
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        /* Main application container styling */
+        .app-container {
+            width: 100%;
+            max-width: 700px;
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* rounded-3xl */
+            padding: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* Home View Specific Styles */
+        .game-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .game-tile {
+            padding: 1rem;
+            background-color: #f7faff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid #e0e7ff;
+        }
+        
+        .game-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 10px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+        
+        /* Card Grid (Memory Game Specific) */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 15px 0;
+        }
+
+        .card {
+            background-color: transparent;
+            height: 80px;
+            perspective: 1000px;
+            cursor: pointer;
+            transition: transform 0.6s;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+
+        /* Front and Back of the Card */
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+
+        .card.flipped .card-inner, .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-radius: 0.5rem;
+            user-select: none;
+            padding: 5px; /* Allow text wrapping */
+        }
+
+        .card-back {
+            background-color: var(--card-back-color);
+            color: white;
+            border: 3px solid var(--secondary-color);
+            transition: background-color 0.3s;
+        }
+        
+        .card:hover .card-back:not(.matched) {
+            background-color: #1e40af; /* Slightly lighter blue on hover */
+        }
+
+
+        .card-front {
+            background-color: var(--card-front-color);
+            color: var(--text-color);
+            transform: rotateY(180deg);
+            border: 3px solid #e5e7eb;
+            font-size: 1.1rem; /* Adjust font size for words */
+            line-height: 1.2;
+        }
+        
+        .card-front.icon {
+            font-size: 2.5rem; /* Larger font size for icons */
+        }
+
+        .card.matched .card-inner {
+            opacity: 0.6;
+            transform: rotateY(180deg) scale(0.95);
+            transition: transform 0.6s, opacity 0.6s;
+        }
+        
+        .card.matched .card-front {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        /* Button Styles */
+        .btn-base {
+            padding: 10px 20px;
+            border-radius: 9999px; /* full rounded */
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.1s;
+            border: none;
+        }
+        .btn-primary {
+            @apply btn-base;
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px var(--secondary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px var(--secondary-color);
+        }
+        
+        .btn-secondary {
+            @apply btn-base;
+            background-color: #e0e7ff; /* Indigo 100 */
+            color: var(--secondary-color);
+            box-shadow: 0 3px #c7d2fe; /* Indigo 200 */
+        }
+        
+        .btn-secondary:hover {
+            background-color: #c7d2fe; /* Indigo 200 */
+        }
+        
+        .btn-secondary:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px #c7d2fe;
+        }
+
+
+        /* Modal Styling */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 40px 30px;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            .card-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+            }
+            .card {
+                height: 70px;
+            }
+            .card-front {
+                font-size: 0.9rem;
+            }
+            .card-front.icon {
+                font-size: 2rem;
+            }
+            .app-container {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .game-grid {
+                grid-template-columns: repeat(1, 1fr) !important;
+            }
+        }
+        
+        /* Status Bar and Controls (Shared across games) */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #e0e7ff; /* Indigo 100 */
+            margin-bottom: 10px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex-grow: 1;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            font-weight: 700;
+        }
+        
+        .icon-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Specific Styles for new games */
+        .game-content-box {
+            @apply text-center mt-6 p-6 bg-gray-50 rounded-xl shadow-inner border border-indigo-200 min-h-[300px] flex flex-col justify-between items-center;
+        }
+        .word-token {
+            @apply inline-block px-3 py-1 m-1 bg-white border border-indigo-300 rounded-full cursor-pointer hover:bg-indigo-100 transition;
+        }
+        .word-token.correct {
+             @apply bg-success-color text-white border-success-color;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ============================= -->
+        <!-- 1. HOME VIEW (遊戲選擇主頁) -->
+        <!-- ============================= -->
+        <div id="home-view" class="w-full">
+            <h1 class="text-4xl font-extrabold text-center mb-8">英文小遊戲</h1>
+
+            <div id="game-list" class="game-grid grid gap-4 sm:grid-cols-2">
+                <!-- Game tiles generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 2. MEMORY GAME VIEW (翻翻樂) -->
+        <!-- ============================= -->
+        <div id="memory-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">翻翻樂 (Memory Match)</h1>
+            <!-- Status Bar / Game Board / Modal (Memory Game uses existing structure) -->
+            <div class="status-bar">
+                <button id="memory-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <div class="stat-item">
+                    <div class="icon-text"><span class="text-xl">🚶</span><span>步數</span></div>
+                    <div id="moves-counter" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="icon-text"><span class="text-xl">⏱️</span><span>時間</span></div>
+                    <div id="timer" class="stat-value">00:00</div>
+                </div>
+                <div><button id="reset-button" class="btn-primary text-sm px-3 py-2">重設</button></div>
+            </div>
+            <div id="card-grid" class="card-grid"></div>
+        </div>
+        
+        <!-- ============================= -->
+        <!-- 3. FLASHCARD GAME VIEW (閃卡測驗) -->
+        <!-- ============================= -->
+        <div id="flashcard-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">閃卡測驗 (Flashcard Quiz)</h1>
+            <div class="status-bar">
+                <button id="flashcard-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">卡片: <span id="flashcard-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div id="flashcard-content" class="min-h-[150px] flex flex-col justify-center items-center">
+                    <p id="flashcard-prompt" class="text-2xl font-semibold text-gray-700">準備好了嗎？</p>
+                    <p id="flashcard-answer" class="text-5xl font-extrabold text-primary-color mt-4 transition-opacity duration-500 hidden"></p>
+                </div>
+                <div class="mt-8 space-x-4 flex justify-center">
+                    <button id="flashcard-reveal-btn" class="btn-primary">顯示答案</button>
+                    <button id="flashcard-next-btn" class="btn-secondary" disabled>下一題</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 4. JUMBLE GAME VIEW (單字拼圖) -->
+        <!-- ============================= -->
+        <div id="jumble-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">單字拼圖 (Word Jumble)</h1>
+            <div class="status-bar">
+                <button id="jumble-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">單字: <span id="jumble-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div>
+                    <p class="text-lg font-medium text-gray-500 mb-4" id="jumble-hint">提示：</p>
+                    <div id="jumble-scrambled-letters" class="text-6xl font-extrabold tracking-widest text-secondary-color mb-8"></div>
+                </div>
+                <input type="text" id="jumble-input" placeholder="輸入正確單字..." class="w-full max-w-sm p-3 text-center text-xl border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition uppercase" maxlength="15" />
+                <p id="jumble-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="jumble-check-btn" class="btn-primary flex-1 max-w-[150px]">檢查答案</button>
+                    <button id="jumble-next-btn" class="btn-secondary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============================= -->
+        <!-- 5. LISTENING GAME VIEW (聽力訓練) -->
+        <!-- ============================= -->
+        <div id="listening-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">聽力訓練 (Listening Practice)</h1>
+            <div class="status-bar">
+                <button id="listening-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">回合: <span id="listening-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div>
+                    <p class="text-lg font-medium text-gray-500 mb-4" id="listening-prompt-text">點擊播放，並聽寫單字。</p>
+                    <button id="listening-play-btn" class="text-6xl p-4 bg-indigo-100 rounded-full hover:bg-indigo-200 transition">▶️</button>
+                    <div id="listening-hint" class="text-xl font-bold text-indigo-500 mt-4 hidden"></div>
+                </div>
+                <input type="text" id="listening-input" placeholder="輸入您聽到的單字..." class="w-full max-w-sm p-3 text-center text-xl border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition uppercase" maxlength="15" />
+                <p id="listening-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="listening-check-btn" class="btn-primary flex-1 max-w-[150px]">檢查答案</button>
+                    <button id="listening-next-btn" class="btn-secondary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 6. FILL-IN GAME VIEW (填空遊戲) -->
+        <!-- ============================= -->
+        <div id="fill_in-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">填空遊戲 (Fill-in-the-Blank)</h1>
+            <div class="status-bar">
+                <button id="fill_in-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">句子: <span id="fill_in-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div id="fill_in-sentence" class="text-2xl font-medium text-gray-800 mb-8 p-4 bg-white rounded-lg shadow-sm w-full">
+                    <!-- Sentence with blank -->
+                </div>
+                <input type="text" id="fill_in-input" placeholder="填入空格中的單字..." class="w-full max-w-sm p-3 text-center text-xl border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition uppercase" maxlength="15" />
+                <p id="fill_in-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="fill_in-check-btn" class="btn-primary flex-1 max-w-[150px]">檢查答案</button>
+                    <button id="fill_in-next-btn" class="btn-secondary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 7. SENTENCE SCRAMBLE (句子重組) -->
+        <!-- ============================= -->
+        <div id="sentence_scramble-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">句子重組 (Sentence Scramble)</h1>
+            <div class="status-bar">
+                <button id="scramble-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">句子: <span id="scramble-count">0/0</span></p>
+            </div>
+            <div class="game-content-box min-h-[400px]">
+                <div class="w-full">
+                    <p class="text-sm font-medium text-gray-500 mb-2">點擊單字以重組成正確的句子:</p>
+                    <div id="scramble-target-sentence" class="min-h-[80px] p-2 mb-4 border-2 border-indigo-300 border-dashed rounded-lg bg-indigo-50 text-left text-lg">
+                        <!-- Reordered words appear here -->
+                    </div>
+                    <div id="scramble-word-pool" class="min-h-[80px] p-2 mb-6 border rounded-lg bg-white text-left text-lg">
+                        <!-- Scrambled words appear here -->
+                    </div>
+                </div>
+                <p id="scramble-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="scramble-check-btn" class="btn-primary flex-1 max-w-[150px]">檢查</button>
+                    <button id="scramble-reset-btn" class="btn-secondary flex-1 max-w-[150px]">重設</button>
+                    <button id="scramble-next-btn" class="btn-primary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 8. PRONUNCIATION (發音挑戰) -->
+        <!-- ============================= -->
+        <div id="pronunciation-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">發音挑戰 (Pronunciation Challenge)</h1>
+            <div class="status-bar">
+                <button id="pronunciation-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">單字: <span id="pronunciation-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div>
+                    <p class="text-2xl font-medium text-gray-500 mb-4">請對著麥克風念出這個單字:</p>
+                    <div id="pronunciation-word" class="text-7xl font-extrabold text-secondary-color mb-8"></div>
+                </div>
+                <p id="pronunciation-instructions" class="text-sm text-gray-500 mb-6">(此處為模擬發音辨識)</p>
+                <button id="pronunciation-start-btn" class="btn-primary text-2xl px-6 py-4">🎙️ 開始錄音 (模擬)</button>
+                <p id="pronunciation-feedback" class="text-2xl font-bold mt-8 min-h-[40px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="pronunciation-next-btn" class="btn-secondary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 9. WORD CHAIN (詞彙接龍) -->
+        <!-- ============================= -->
+        <div id="word_chain-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">詞彙接龍 (Word Chain)</h1>
+            <div class="status-bar">
+                <button id="word_chain-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">回合: <span id="word_chain-turn">1</span></p>
+            </div>
+            <div class="game-content-box min-h-[400px]">
+                <div class="w-full">
+                    <p class="text-lg font-medium text-gray-500 mb-2">上一個單字 (電腦):</p>
+                    <div id="word_chain-current-word" class="text-4xl font-extrabold text-secondary-color p-3 bg-indigo-100 rounded-lg shadow-md mb-6">Start</div>
+                    <p id="word_chain-rule" class="text-xl font-semibold mb-4 text-gray-700">請輸入一個以 <span id="word_chain-required-letter" class="text-red-500 text-3xl">T</span> 開頭的單字:</p>
+                </div>
+                <input type="text" id="word_chain-input" placeholder="輸入您的單字..." class="w-full max-w-sm p-3 text-center text-xl border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition uppercase" maxlength="15" />
+                <p id="word_chain-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="word_chain-submit-btn" class="btn-primary flex-1 max-w-[150px]">提交</button>
+                    <button id="word_chain-restart-btn" class="btn-secondary flex-1 max-w-[150px]">重設</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 10. SYNONYM BATTLE (同義詞大作戰) -->
+        <!-- ============================= -->
+        <div id="synonym_battle-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">同義詞大作戰 (Synonym Battle)</h1>
+            <div class="status-bar">
+                <button id="synonym-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+                <p class="text-xl font-semibold text-gray-700">挑戰: <span id="synonym-count">0/0</span></p>
+            </div>
+            <div class="game-content-box">
+                <div>
+                    <p class="text-2xl font-medium text-gray-500 mb-4">請提供這個單字的一個**同義詞**:</p>
+                    <div id="synonym-word" class="text-7xl font-extrabold text-secondary-color mb-8"></div>
+                </div>
+                <input type="text" id="synonym-input" placeholder="輸入同義詞..." class="w-full max-w-sm p-3 text-center text-xl border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" maxlength="15" />
+                <p id="synonym-feedback" class="text-lg font-semibold mt-4 min-h-[30px]"></p>
+                <div class="mt-6 space-x-4 flex justify-center w-full">
+                    <button id="synonym-check-btn" class="btn-primary flex-1 max-w-[150px]">檢查答案</button>
+                    <button id="synonym-next-btn" class="btn-secondary flex-1 max-w-[150px]" disabled>下一個</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 11. DAILY WORD (每日單字) -->
+        <!-- ============================= -->
+        <div id="daily_word-game-view" class="game-view" style="display: none;">
+            <h1 class="text-3xl font-bold text-center mb-4">每日單字 (Daily Word)</h1>
+            <div class="status-bar">
+                <button id="daily_word-back-button" class="btn-secondary text-sm px-3 py-2">🏠 主頁</button>
+            </div>
+            <div class="game-content-box">
+                <p class="text-4xl" id="daily_word-icon">🗓️</p>
+                <div class="w-full mt-4 p-4 bg-white rounded-lg shadow-md border-t-4 border-primary-color">
+                    <h2 id="daily_word-word" class="text-5xl font-extrabold text-primary-color mb-2"></h2>
+                    <p id="daily_word-meaning" class="text-2xl text-gray-600 mb-4"></p>
+                    <div class="text-left border-t pt-4">
+                        <p class="text-sm font-semibold text-indigo-700">例句:</p>
+                        <p id="daily_word-sentence" class="text-lg italic text-gray-700"></p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-6">今天的單字每天自動更新一次。</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Over Modal (Used only by Memory Game) -->
+    <div id="game-over-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold text-success-color mb-4 text-green-500">恭喜！遊戲完成！🎉</h2>
+            <p class="text-lg mb-4">您成功配對了所有單字！</p>
+            <p class="text-xl font-semibold mb-6">總步數: <span id="final-moves" class="text-primary-color"></span></p>
+            <p class="text-xl font-semibold mb-6">總時間: <span id="final-time" class="text-primary-color"></span></p>
+            <button id="modal-reset-button" class="btn-primary">再玩一次</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- 遊戲定義與數據 ---
+        
+        // 10 遊戲列表 (所有遊戲現在都可玩)
+        const allGames = [
+            { id: 1, name: "翻翻樂 (Memory Match)", description: "單字與圖像配對", icon: "🧠", type: "memory" },
+            { id: 2, name: "閃卡測驗 (Flashcard Quiz)", description: "單字與中文釋義測驗", icon: "✨", type: "flashcard" },
+            { id: 3, name: "單字拼圖 (Word Jumble)", description: "字母重組挑戰", icon: "🧩", type: "jumble" },
+            { id: 4, name: "聽力訓練 (Listening Practice)", description: "聽寫與辨識", icon: "🎧", type: "listening" },
+            { id: 5, name: "填空遊戲 (Fill-in-the-Blank)", description: "語境理解", icon: "✍️", type: "fill_in" },
+            { id: 6, name: "句子重組 (Sentence Scramble)", description: "語法練習", icon: "📝", type: "sentence_scramble" },
+            { id: 7, name: "發音挑戰 (Pronunciation Challenge)", description: "語音糾正 (模擬)", icon: "🗣️", type: "pronunciation" },
+            { id: 8, name: "詞彙接龍 (Word Chain)", description: "與AI對戰 (單人模式)", icon: "🔗", type: "word_chain" },
+            { id: 9, name: "同義詞大作戰 (Synonym Battle)", description: "擴充詞彙", icon: "⚔️", type: "synonym_battle" },
+            { id: 10, name: "每日單字 (Daily Word)", description: "新單字學習", icon: "🗓️", type: "daily_word" }
+        ];
+
+        // 所有遊戲共用的單字庫，加入了中文釋義、例句和同義詞
+        const wordPairs = [
+            { id: 1, word: "Apple", icon: "🍎", meaning: "蘋果", sentence: "I like to eat a red ___ every morning.", synonym: "Fruit", last_letter: 'e' },
+            { id: 2, word: "Cat", icon: "🐈", meaning: "貓", sentence: "The fluffy ___ sleeps on the couch.", synonym: "Feline", last_letter: 't' },
+            { id: 3, word: "Car", icon: "🚗", meaning: "汽車", sentence: "We drove our new ___ to the beach.", synonym: "Vehicle", last_letter: 'r' },
+            { id: 4, word: "Sun", icon: "☀️", meaning: "太陽", sentence: "The ___ shines brightly in the sky.", synonym: "Star", last_letter: 'n' },
+            { id: 5, word: "Book", icon: "📚", meaning: "書本", sentence: "Please read the new ___ on the shelf.", synonym: "Tome", last_letter: 'k' },
+            { id: 6, word: "House", icon: "🏠", meaning: "房子", sentence: "A big, comfortable ___ is our dream.", synonym: "Home", last_letter: 'e' },
+            { id: 7, word: "Star", icon: "⭐", meaning: "星星", sentence: "I wish upon a falling ___ tonight.", synonym: "Celestial Body", last_letter: 'r' },
+            { id: 8, word: "Pizza", icon: "🍕", meaning: "披薩", sentence: "Let's order a large ___ for dinner.", synonym: "Dish", last_letter: 'a' }
+        ];
+
+        // --- DOM 元素 ---
+        const homeView = document.getElementById('home-view');
+        const allGameViews = document.querySelectorAll('.game-view');
+        
+        // Memory Game elements
+        const cardGrid = document.getElementById('card-grid');
+        const movesCounterElement = document.getElementById('moves-counter');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const memoryBackButton = document.getElementById('memory-back-button');
+        const modal = document.getElementById('game-over-modal');
+        const modalResetButton = document.getElementById('modal-reset-button');
+        const finalMovesElement = document.getElementById('final-moves');
+        const finalTimeElement = document.getElementById('final-time');
+
+        // Flashcard Game elements
+        const flashcardCountEl = document.getElementById('flashcard-count');
+        const flashcardRevealBtn = document.getElementById('flashcard-reveal-btn');
+        const flashcardNextBtn = document.getElementById('flashcard-next-btn');
+        
+        // Jumble Game elements
+        const jumbleCountEl = document.getElementById('jumble-count');
+        const jumbleInputEl = document.getElementById('jumble-input');
+        const jumbleCheckBtn = document.getElementById('jumble-check-btn');
+        const jumbleNextBtn = document.getElementById('jumble-next-btn');
+        const jumbleFeedbackEl = document.getElementById('jumble-feedback');
+        
+        // Listening Game elements
+        const listeningCountEl = document.getElementById('listening-count');
+        const listeningPromptTextEl = document.getElementById('listening-prompt-text');
+        const listeningPlayBtn = document.getElementById('listening-play-btn');
+        const listeningHintEl = document.getElementById('listening-hint');
+        const listeningInputEl = document.getElementById('listening-input');
+        const listeningCheckBtn = document.getElementById('listening-check-btn');
+        const listeningNextBtn = document.getElementById('listening-next-btn');
+        const listeningFeedbackEl = document.getElementById('listening-feedback');
+
+        // Fill-in Game elements
+        const fillInCountEl = document.getElementById('fill_in-count');
+        const fillInSentenceEl = document.getElementById('fill_in-sentence');
+        const fillInInputEl = document.getElementById('fill_in-input');
+        const fillInCheckBtn = document.getElementById('fill_in-check-btn');
+        const fillInNextBtn = document.getElementById('fill_in-next-btn');
+        const fillInFeedbackEl = document.getElementById('fill_in-feedback');
+
+        // Sentence Scramble elements
+        const scrambleCountEl = document.getElementById('scramble-count');
+        const scrambleTargetSentenceEl = document.getElementById('scramble-target-sentence');
+        const scrambleWordPoolEl = document.getElementById('scramble-word-pool');
+        const scrambleCheckBtn = document.getElementById('scramble-check-btn');
+        const scrambleResetBtn = document.getElementById('scramble-reset-btn');
+        const scrambleNextBtn = document.getElementById('scramble-next-btn');
+        const scrambleFeedbackEl = document.getElementById('scramble-feedback');
+
+        // Pronunciation Game elements
+        const pronunciationCountEl = document.getElementById('pronunciation-count');
+        const pronunciationWordEl = document.getElementById('pronunciation-word');
+        const pronunciationStartBtn = document.getElementById('pronunciation-start-btn');
+        const pronunciationFeedbackEl = document.getElementById('pronunciation-feedback');
+        const pronunciationNextBtn = document.getElementById('pronunciation-next-btn');
+
+        // Word Chain Game elements
+        const wordChainTurnEl = document.getElementById('word_chain-turn');
+        const wordChainCurrentWordEl = document.getElementById('word_chain-current-word');
+        const wordChainRequiredLetterEl = document.getElementById('word_chain-required-letter');
+        const wordChainInputEl = document.getElementById('word_chain-input');
+        const wordChainSubmitBtn = document.getElementById('word_chain-submit-btn');
+        const wordChainFeedbackEl = document.getElementById('word_chain-feedback');
+
+        // Synonym Battle elements
+        const synonymCountEl = document.getElementById('synonym-count');
+        const synonymWordEl = document.getElementById('synonym-word');
+        const synonymInputEl = document.getElementById('synonym-input');
+        const synonymCheckBtn = document.getElementById('synonym-check-btn');
+        const synonymNextBtn = document.getElementById('synonym-next-btn');
+        const synonymFeedbackEl = document.getElementById('synonym-feedback');
+
+        // Daily Word elements
+        const dailyWordWordEl = document.getElementById('daily_word-word');
+        const dailyWordMeaningEl = document.getElementById('daily_word-meaning');
+        const dailyWordSentenceEl = document.getElementById('daily_word-sentence');
+        
+        // --- Global State ---
+        let timerInterval;
+
+        // --- Memory Game State ---
+        let cards = [];
+        let flippedCards = [];
+        let matchesFound = 0;
+        let moves = 0;
+        let isProcessing = false;
+        let timer = 0;
+
+        // --- Flashcard Game State ---
+        let flashcards = [];
+        let currentFlashcardIndex = 0;
+
+        // --- Jumble Game State ---
+        let jumbleWords = [];
+        let currentJumbleIndex = 0;
+        let currentCorrectWord = "";
+        
+        // --- Listening Game State ---
+        let listeningWords = [];
+        let currentListeningIndex = 0;
+        
+        // --- Fill-in Game State ---
+        let fillInSentences = [];
+        let currentFillInIndex = 0;
+
+        // --- Sentence Scramble Game State ---
+        let scrambleSentences = [];
+        let currentScrambleIndex = 0;
+        let currentScrambleOriginal = "";
+        let currentScrambleReordered = [];
+        
+        // --- Pronunciation Game State ---
+        let pronunciationWords = [];
+        let currentPronunciationIndex = 0;
+
+        // --- Word Chain Game State ---
+        let wordChainWords = [];
+        let wordChainTurn = 1;
+        let wordChainLastWord = "";
+        let wordChainUsedWords = new Set();
+        
+        // --- Synonym Battle Game State ---
+        let synonymWords = [];
+        let currentSynonymIndex = 0;
+
+
+        // --- 共通工具函數 ---
+
+        /**
+         * Shuffles an array in place (Fisher-Yates algorithm).
+         * @param {Array} array 
+         */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Converts seconds into MM:SS format.
+         * @param {number} totalSeconds 
+         * @returns {string}
+         */
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        /**
+         * 創建並顯示一個簡單的模態視窗（替代 alert/confirm）。
+         * @param {string} title 標題
+         * @param {string} message 訊息
+         */
+        function showSimpleModal(title, message) {
+            const tempModal = document.createElement('div');
+            tempModal.innerHTML = `
+                <div class="modal" style="display: flex;">
+                    <div class="modal-content">
+                        <h3 class="text-xl font-bold mb-4 text-primary-color">${title}</h3>
+                        <p class="mb-6 text-gray-700">${message}</p>
+                        <button onclick="this.closest('.modal').remove()" class="btn-primary">確定</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(tempModal.firstChild);
+        }
+
+        // --- 視圖控制器函數 ---
+        
+        /**
+         * 渲染主頁面上的遊戲列表。
+         */
+        function renderGameList() {
+            const gameListContainer = document.getElementById('game-list');
+            gameListContainer.innerHTML = '';
+            allGames.forEach(game => {
+                const gameTile = document.createElement('div');
+                gameTile.classList.add('game-tile');
+                // 所有遊戲現在都可玩
+                gameTile.addEventListener('click', () => showPage(game.type));
+
+                gameTile.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-3xl">${game.icon}</span>
+                        <div>
+                            <h3 class="font-bold text-lg text-primary-color">${game.name}</h3>
+                            <p class="text-sm text-gray-500">${game.description}</p>
+                        </div>
+                    </div>
+                `;
+                gameListContainer.appendChild(gameTile);
+            });
+        }
+        
+        /**
+         * 切換顯示的主畫面。
+         * @param {string} pageId - 遊戲類型 ID
+         */
+        function showPage(pageId) {
+            // 隱藏所有視圖和 modal
+            homeView.style.display = 'none';
+            allGameViews.forEach(view => view.style.display = 'none');
+            modal.style.display = 'none';
+            clearInterval(timerInterval); // 停止計時器
+
+            if (pageId === 'home') {
+                homeView.style.display = 'block';
+                renderGameList();
+            } else {
+                const view = document.getElementById(`${pageId}-game-view`);
+                if (view) {
+                    view.style.display = 'block';
+                    // 根據遊戲類型呼叫初始化函數
+                    switch (pageId) {
+                        case 'memory': initMemoryGame(); break;
+                        case 'flashcard': initFlashcardGame(); break;
+                        case 'jumble': initJumbleGame(); break;
+                        case 'listening': initListeningGame(); break;
+                        case 'fill_in': initFillInGame(); break;
+                        case 'sentence_scramble': initSentenceScrambleGame(); break;
+                        case 'pronunciation': initPronunciationGame(); break;
+                        case 'word_chain': initWordChainGame(); break;
+                        case 'synonym_battle': initSynonymBattleGame(); break;
+                        case 'daily_word': initDailyWordGame(); break;
+                    }
+                }
+            }
+        }
+
+        // ====================================================================
+        // --- 遊戲 1: 翻翻樂 (Memory Match) 邏輯 ---
+        // ====================================================================
+
+        function updateMoves() { movesCounterElement.textContent = moves; }
+        
+        function startTimer() {
+            clearInterval(timerInterval);
+            timer = 0;
+            timerElement.textContent = formatTime(timer);
+            timerInterval = setInterval(() => { timer++; timerElement.textContent = formatTime(timer); }, 1000);
+        }
+
+        function setupCards() {
+            const deck = [];
+            // 由於 wordPairs 較少，我們只取前 4 個進行 4x2 的遊戲板
+            const subset = wordPairs.slice(0, 4); 
+            subset.forEach(pair => {
+                deck.push({ content: pair.word, type: 'word', matchId: pair.id, isMatched: false });
+                deck.push({ content: pair.icon, type: 'icon', matchId: pair.id, isMatched: false });
+            });
+            shuffle(deck);
+            cards = deck;
+            return deck;
+        }
+
+        function createCardElement(cardData, index) {
+            // ... (Same as before) ...
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.index = index;
+            card.dataset.matchId = cardData.matchId;
+            const clickHandler = () => handleCardClick(card);
+            card.addEventListener('click', clickHandler);
+            card.clickHandler = clickHandler;
+
+            const inner = document.createElement('div');
+            inner.classList.add('card-inner');
+
+            const back = document.createElement('div');
+            back.classList.add('card-back');
+            back.textContent = '?';
+
+            const front = document.createElement('div');
+            front.classList.add('card-front', cardData.type === 'icon' ? 'icon' : 'word');
+            front.textContent = cardData.content;
+            
+            inner.appendChild(front);
+            inner.appendChild(back);
+            card.appendChild(inner);
+            
+            return card;
+        }
+
+        function renderBoard() {
+            cardGrid.innerHTML = '';
+            cards.forEach((cardData, index) => {
+                const cardElement = createCardElement(cardData, index);
+                cardGrid.appendChild(cardElement);
+            });
+        }
+
+        function handleCardClick(clickedCard) {
+            if (isProcessing || clickedCard.classList.contains('matched') || clickedCard.classList.contains('flipped')) { return; }
+
+            clickedCard.classList.add('flipped');
+            flippedCards.push(clickedCard);
+
+            if (flippedCards.length === 2) {
+                isProcessing = true;
+                moves++;
+                updateMoves();
+                
+                setTimeout(checkForMatch, 1000);
+            }
+        }
+
+        function getCardType(cardElement) {
+            const front = cardElement.querySelector('.card-front');
+            return front.classList.contains('icon') ? 'icon' : 'word';
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+            const isMatch = (card1.dataset.matchId === card2.dataset.matchId) && (getCardType(card1) !== getCardType(card2));
+            
+            if (isMatch) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchesFound++;
+                if (matchesFound === wordPairs.slice(0, 4).length) { setTimeout(showGameOverModal, 500); }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+
+            flippedCards = [];
+            isProcessing = false;
+        }
+        
+        function showGameOverModal() {
+            clearInterval(timerInterval);
+            finalMovesElement.textContent = moves;
+            finalTimeElement.textContent = formatTime(timer);
+            modal.style.display = 'flex';
+        }
+
+        function initMemoryGame() {
+            flippedCards = []; matchesFound = 0; moves = 0; isProcessing = false;
+            updateMoves();
+            setupCards();
+            renderBoard();
+            startTimer();
+        }
+
+        // ====================================================================
+        // --- 遊戲 2: 閃卡測驗 (Flashcard Quiz) 邏輯 ---
+        // ====================================================================
+
+        function initFlashcardGame() {
+            flashcards = wordPairs.map(p => ({ word: p.word, meaning: p.meaning, icon: p.icon }));
+            shuffle(flashcards);
+            currentFlashcardIndex = 0;
+            flashcardRevealBtn.onclick = revealFlashcard;
+            flashcardNextBtn.onclick = nextFlashcard;
+            renderFlashcard();
+        }
+
+        function renderFlashcard() {
+            const promptEl = document.getElementById('flashcard-prompt');
+            const answerEl = document.getElementById('flashcard-answer');
+            flashcardCountEl.textContent = `${currentFlashcardIndex + 1}/${flashcards.length}`;
+
+            if (currentFlashcardIndex >= flashcards.length) {
+                promptEl.innerHTML = "<span class='text-4xl text-green-600'>測驗完成！</span>";
+                answerEl.textContent = "🎉";
+                answerEl.classList.remove('hidden');
+                flashcardRevealBtn.disabled = true;
+                flashcardNextBtn.disabled = true;
+                flashcardCountEl.textContent = `${flashcards.length}/${flashcards.length}`;
+                return;
+            }
+
+            const card = flashcards[currentFlashcardIndex];
+            const isWordPrompt = Math.random() < 0.5;
+
+            if (isWordPrompt) {
+                promptEl.innerHTML = `<span class="text-4xl font-bold">${card.word}</span>`;
+                answerEl.textContent = `${card.meaning} (${card.icon})`;
+            } else {
+                promptEl.innerHTML = `<span class="text-5xl">${card.icon}</span><br>這是什麼單字？ (提示：${card.meaning})`;
+                answerEl.textContent = card.word;
+            }
+            
+            answerEl.classList.add('hidden');
+            flashcardRevealBtn.textContent = '顯示答案';
+            flashcardRevealBtn.disabled = false;
+            flashcardNextBtn.disabled = true;
+        }
+
+        function revealFlashcard() {
+            document.getElementById('flashcard-answer').classList.remove('hidden');
+            flashcardRevealBtn.disabled = true;
+            flashcardNextBtn.disabled = false;
+        }
+
+        function nextFlashcard() {
+            currentFlashcardIndex++;
+            renderFlashcard();
+        }
+
+        // ====================================================================
+        // --- 遊戲 3: 單字拼圖 (Word Jumble) 邏輯 ---
+        // ====================================================================
+
+        function scrambleWord(word) {
+            const letters = word.split('');
+            let scrambled;
+            do {
+                shuffle(letters);
+                scrambled = letters.join('');
+            } while (scrambled === word);
+            return scrambled;
+        }
+
+        function initJumbleGame() {
+            jumbleWords = wordPairs.map(p => ({ word: p.word.toUpperCase(), meaning: p.meaning }));
+            shuffle(jumbleWords);
+            currentJumbleIndex = 0;
+            jumbleCheckBtn.onclick = checkJumbleAnswer;
+            jumbleNextBtn.onclick = nextJumbleWord;
+            jumbleInputEl.onkeyup = (e) => { if (e.key === 'Enter' && !jumbleCheckBtn.disabled) checkJumbleAnswer(); }; // Enter key support
+            renderJumble();
+        }
+
+        function renderJumble() {
+            const scrambledLettersEl = document.getElementById('jumble-scrambled-letters');
+            const hintEl = document.getElementById('jumble-hint');
+            jumbleCountEl.textContent = `${currentJumbleIndex + 1}/${jumbleWords.length}`;
+
+            if (currentJumbleIndex >= jumbleWords.length) {
+                scrambledLettersEl.innerHTML = "<span class='text-4xl text-green-600'>挑戰完成！</span>";
+                hintEl.textContent = "所有單字都已完成拼字！🎉";
+                jumbleInputEl.style.display = 'none';
+                jumbleCheckBtn.style.display = 'none';
+                jumbleNextBtn.style.display = 'none';
+                jumbleFeedbackEl.textContent = '';
+                jumbleCountEl.textContent = `${jumbleWords.length}/${jumbleWords.length}`;
+                return;
+            }
+
+            const wordData = jumbleWords[currentJumbleIndex];
+            currentCorrectWord = wordData.word;
+            
+            scrambledLettersEl.textContent = scrambleWord(currentCorrectWord);
+            hintEl.textContent = `提示：${wordData.meaning}`;
+            
+            jumbleInputEl.value = '';
+            jumbleInputEl.style.display = 'block';
+            jumbleCheckBtn.style.display = 'inline-block';
+            jumbleNextBtn.style.display = 'inline-block';
+            jumbleCheckBtn.disabled = false;
+            jumbleNextBtn.disabled = true;
+            jumbleInputEl.disabled = false;
+            jumbleFeedbackEl.textContent = '';
+            jumbleInputEl.focus();
+        }
+
+        function checkJumbleAnswer() {
+            const userGuess = jumbleInputEl.value.trim().toUpperCase();
+            
+            if (userGuess === currentCorrectWord) {
+                jumbleFeedbackEl.textContent = `✅ 正確！(${currentCorrectWord})`;
+                jumbleFeedbackEl.classList.remove('text-red-500');
+                jumbleFeedbackEl.classList.add('text-green-500');
+                jumbleCheckBtn.disabled = true;
+                jumbleNextBtn.disabled = false;
+                jumbleInputEl.disabled = true;
+            } else {
+                jumbleFeedbackEl.textContent = "❌ 錯誤，請再試一次。";
+                jumbleFeedbackEl.classList.remove('text-green-500');
+                jumbleFeedbackEl.classList.add('text-red-500');
+            }
+        }
+
+        function nextJumbleWord() {
+            currentJumbleIndex++;
+            renderJumble();
+        }
+        
+        // ====================================================================
+        // --- 遊戲 4: 聽力訓練 (Listening Practice) 邏輯 (模擬) ---
+        // ====================================================================
+
+        function initListeningGame() {
+            listeningWords = wordPairs.map(p => ({ word: p.word.toUpperCase(), meaning: p.meaning }));
+            shuffle(listeningWords);
+            currentListeningIndex = 0;
+            listeningPlayBtn.onclick = mockPlayAudio;
+            listeningCheckBtn.onclick = checkListeningAnswer;
+            listeningNextBtn.onclick = nextListeningWord;
+            listeningInputEl.onkeyup = (e) => { if (e.key === 'Enter' && !listeningCheckBtn.disabled) checkListeningAnswer(); };
+            renderListeningWord();
+        }
+
+        function renderListeningWord() {
+            listeningCountEl.textContent = `${currentListeningIndex + 1}/${listeningWords.length}`;
+            
+            if (currentListeningIndex >= listeningWords.length) {
+                listeningPromptTextEl.textContent = "挑戰完成！";
+                listeningPlayBtn.textContent = "🎉";
+                listeningPlayBtn.disabled = true;
+                listeningHintEl.classList.add('hidden');
+                listeningInputEl.style.display = 'none';
+                listeningCheckBtn.style.display = 'none';
+                listeningNextBtn.style.display = 'none';
+                listeningFeedbackEl.textContent = '';
+                return;
+            }
+
+            const wordData = listeningWords[currentListeningIndex];
+            
+            // 由於無法播放真實音頻，我們在點擊「播放」後顯示中文意思作為提示
+            listeningPromptTextEl.textContent = "點擊播放，並聽寫單字。";
+            listeningPlayBtn.textContent = "▶️";
+            listeningPlayBtn.disabled = false;
+            listeningHintEl.classList.add('hidden');
+            listeningHintEl.textContent = `中文意思：${wordData.meaning}`;
+            
+            listeningInputEl.value = '';
+            listeningInputEl.disabled = false;
+            listeningCheckBtn.disabled = false;
+            listeningNextBtn.disabled = true;
+            listeningFeedbackEl.textContent = '';
+            listeningInputEl.style.display = 'block';
+            listeningCheckBtn.style.display = 'inline-block';
+            listeningNextBtn.style.display = 'inline-block';
+            listeningInputEl.focus();
+        }
+        
+        function mockPlayAudio() {
+            // 模擬播放音頻，顯示中文意思作為提示
+            listeningPlayBtn.textContent = "🔊 正在發音...";
+            listeningPlayBtn.disabled = true;
+            setTimeout(() => {
+                listeningPlayBtn.textContent = "✅ 已播放";
+                // 為了讓玩家有線索，我們顯示中文意思
+                listeningHintEl.classList.remove('hidden');
+            }, 1000); 
+        }
+
+        function checkListeningAnswer() {
+            const userGuess = listeningInputEl.value.trim().toUpperCase();
+            const correctWord = listeningWords[currentListeningIndex].word;
+            
+            if (userGuess === correctWord) {
+                listeningFeedbackEl.textContent = `✅ 正確！(${correctWord})`;
+                listeningFeedbackEl.classList.remove('text-red-500');
+                listeningFeedbackEl.classList.add('text-green-500');
+                listeningCheckBtn.disabled = true;
+                listeningNextBtn.disabled = false;
+                listeningInputEl.disabled = true;
+            } else {
+                listeningFeedbackEl.textContent = `❌ 錯誤，正確答案是：${correctWord}。`;
+                listeningFeedbackEl.classList.remove('text-green-500');
+                listeningFeedbackEl.classList.add('text-red-500');
+                listeningCheckBtn.disabled = true;
+                listeningNextBtn.disabled = false;
+                listeningInputEl.disabled = true;
+            }
+            listeningPlayBtn.disabled = true;
+        }
+
+        function nextListeningWord() {
+            currentListeningIndex++;
+            renderListeningWord();
+        }
+
+        // ====================================================================
+        // --- 遊戲 5: 填空遊戲 (Fill-in-the-Blank) 邏輯 ---
+        // ====================================================================
+        
+        function initFillInGame() {
+            fillInSentences = wordPairs.map(p => ({ 
+                sentence: p.sentence.replace('___', '______'), // 加長下劃線
+                word: p.word.toUpperCase() 
+            }));
+            shuffle(fillInSentences);
+            currentFillInIndex = 0;
+            fillInCheckBtn.onclick = checkFillInAnswer;
+            fillInNextBtn.onclick = nextFillInSentence;
+            fillInInputEl.onkeyup = (e) => { if (e.key === 'Enter' && !fillInCheckBtn.disabled) checkFillInAnswer(); };
+            renderFillInSentence();
+        }
+
+        function renderFillInSentence() {
+            fillInCountEl.textContent = `${currentFillInIndex + 1}/${fillInSentences.length}`;
+
+            if (currentFillInIndex >= fillInSentences.length) {
+                fillInSentenceEl.textContent = "挑戰完成！🎉";
+                fillInInputEl.style.display = 'none';
+                fillInCheckBtn.style.display = 'none';
+                fillInNextBtn.style.display = 'none';
+                fillInFeedbackEl.textContent = '';
+                return;
+            }
+
+            const sentenceData = fillInSentences[currentFillInIndex];
+            
+            fillInSentenceEl.innerHTML = `請填入空格中的單字：<br> <span class="font-bold">${sentenceData.sentence}</span>`;
+            
+            fillInInputEl.value = '';
+            fillInInputEl.disabled = false;
+            fillInCheckBtn.disabled = false;
+            fillInNextBtn.disabled = true;
+            fillInFeedbackEl.textContent = '';
+            fillInInputEl.focus();
+        }
+
+        function checkFillInAnswer() {
+            const userGuess = fillInInputEl.value.trim().toUpperCase();
+            const correctWord = fillInSentences[currentFillInIndex].word;
+            
+            if (userGuess === correctWord) {
+                fillInFeedbackEl.textContent = `✅ 正確！`;
+                fillInFeedbackEl.classList.remove('text-red-500');
+                fillInFeedbackEl.classList.add('text-green-500');
+                // 將句子中的空格替換為正確單字
+                fillInSentenceEl.innerHTML = fillInSentences[currentFillInIndex].sentence.replace('______', `<span class="text-green-600 font-extrabold">${correctWord}</span>`);
+                fillInCheckBtn.disabled = true;
+                fillInNextBtn.disabled = false;
+                fillInInputEl.disabled = true;
+            } else {
+                fillInFeedbackEl.textContent = `❌ 錯誤，請再試一次。`;
+                fillInFeedbackEl.classList.remove('text-green-500');
+                fillInFeedbackEl.classList.add('text-red-500');
+            }
+        }
+
+        function nextFillInSentence() {
+            currentFillInIndex++;
+            renderFillInSentence();
+        }
+
+        // ====================================================================
+        // --- 遊戲 6: 句子重組 (Sentence Scramble) 邏輯 ---
+        // ====================================================================
+        
+        function initSentenceScrambleGame() {
+            // 使用 wordPairs 中的句子，並將其拆解為單字列表
+            scrambleSentences = wordPairs.map(p => ({
+                original: p.sentence.replace('___', p.word).replace('.', '').trim(), // 創建完整句子
+            }));
+            shuffle(scrambleSentences);
+            currentScrambleIndex = 0;
+            scrambleCheckBtn.onclick = checkScrambleAnswer;
+            scrambleResetBtn.onclick = resetScrambleBoard;
+            scrambleNextBtn.onclick = nextScrambleSentence;
+            renderScrambleSentence();
+        }
+
+        function renderScrambleSentence() {
+            scrambleCountEl.textContent = `${currentScrambleIndex + 1}/${scrambleSentences.length}`;
+            scrambleFeedbackEl.textContent = '';
+            scrambleCheckBtn.disabled = false;
+            scrambleNextBtn.disabled = true;
+            scrambleTargetSentenceEl.textContent = '';
+            currentScrambleReordered = [];
+            scrambleWordPoolEl.innerHTML = '';
+            
+            if (currentScrambleIndex >= scrambleSentences.length) {
+                scrambleTargetSentenceEl.textContent = "挑戰完成！🎉";
+                scrambleWordPoolEl.style.display = 'none';
+                scrambleCheckBtn.style.display = 'none';
+                scrambleResetBtn.style.display = 'none';
+                scrambleNextBtn.style.display = 'none';
+                return;
+            }
+
+            currentScrambleOriginal = scrambleSentences[currentScrambleIndex].original.toUpperCase();
+            let words = currentScrambleOriginal.split(' ');
+            shuffle(words);
+
+            words.forEach((word, index) => {
+                const token = document.createElement('span');
+                token.classList.add('word-token');
+                token.textContent = word;
+                token.dataset.word = word;
+                token.dataset.originalIndex = index;
+                token.onclick = () => moveWordToTarget(token);
+                scrambleWordPoolEl.appendChild(token);
+            });
+            scrambleWordPoolEl.style.display = 'block';
+            scrambleCheckBtn.style.display = 'inline-block';
+            scrambleResetBtn.style.display = 'inline-block';
+            scrambleNextBtn.style.display = 'inline-block';
+        }
+
+        function moveWordToTarget(token) {
+            token.remove(); // 從 Pool 移除
+            currentScrambleReordered.push(token);
+            
+            // 創建新的可點擊 token
+            const targetToken = document.createElement('span');
+            targetToken.classList.add('word-token');
+            targetToken.textContent = token.textContent;
+            targetToken.onclick = () => moveWordToPool(targetToken, token);
+            scrambleTargetSentenceEl.appendChild(targetToken);
+
+            scrambleFeedbackEl.textContent = '';
+        }
+        
+        function moveWordToPool(targetToken, originalToken) {
+            targetToken.remove(); // 從 Target 移除
+            
+            // 找到原始 token 在 reordered 陣列中的位置並移除
+            const index = currentScrambleReordered.findIndex(t => t.isSameNode(originalToken));
+            if (index > -1) {
+                currentScrambleReordered.splice(index, 1);
+            }
+            
+            // 將原始 token 放回 Pool
+            scrambleWordPoolEl.appendChild(originalToken);
+            originalToken.onclick = () => moveWordToTarget(originalToken); // 重新綁定點擊事件
+        }
+
+        function resetScrambleBoard() {
+            scrambleTargetSentenceEl.innerHTML = '';
+            currentScrambleReordered = [];
+            renderScrambleSentence(); // 重新渲染，因為簡單重置較複雜
+        }
+
+        function checkScrambleAnswer() {
+            const userSentence = currentScrambleReordered.map(token => token.textContent).join(' ');
+            
+            if (userSentence === currentScrambleOriginal) {
+                scrambleFeedbackEl.textContent = `✅ 正確！`;
+                scrambleFeedbackEl.classList.remove('text-red-500');
+                scrambleFeedbackEl.classList.add('text-green-500');
+                scrambleCheckBtn.disabled = true;
+                scrambleNextBtn.disabled = false;
+                scrambleTargetSentenceEl.innerHTML = ''; // 清空 target
+                currentScrambleReordered.forEach(token => {
+                    const correctToken = document.createElement('span');
+                    correctToken.classList.add('word-token', 'correct');
+                    correctToken.textContent = token.textContent;
+                    scrambleTargetSentenceEl.appendChild(correctToken);
+                });
+                scrambleWordPoolEl.innerHTML = ''; // 清空 pool
+            } else {
+                scrambleFeedbackEl.textContent = `❌ 錯誤，請再試一次。`;
+                scrambleFeedbackEl.classList.remove('text-green-500');
+                scrambleFeedbackEl.classList.add('text-red-500');
+            }
+        }
+
+        function nextScrambleSentence() {
+            currentScrambleIndex++;
+            renderScrambleSentence();
+        }
+
+        // ====================================================================
+        // --- 遊戲 7: 發音挑戰 (Pronunciation Challenge) 邏輯 (模擬) ---
+        // ====================================================================
+
+        function initPronunciationGame() {
+            pronunciationWords = wordPairs.map(p => ({ word: p.word, meaning: p.meaning }));
+            shuffle(pronunciationWords);
+            currentPronunciationIndex = 0;
+            pronunciationStartBtn.onclick = mockPronunciationCheck;
+            pronunciationNextBtn.onclick = nextPronunciationWord;
+            renderPronunciationWord();
+        }
+
+        function renderPronunciationWord() {
+            pronunciationCountEl.textContent = `${currentPronunciationIndex + 1}/${pronunciationWords.length}`;
+            pronunciationFeedbackEl.textContent = '';
+            pronunciationStartBtn.disabled = false;
+            pronunciationNextBtn.disabled = true;
+            
+            if (currentPronunciationIndex >= pronunciationWords.length) {
+                pronunciationWordEl.innerHTML = "<span class='text-4xl text-green-600'>挑戰完成！</span>";
+                pronunciationStartBtn.style.display = 'none';
+                pronunciationNextBtn.style.display = 'none';
+                return;
+            }
+
+            const wordData = pronunciationWords[currentPronunciationIndex];
+            pronunciationWordEl.textContent = wordData.word;
+            pronunciationStartBtn.style.display = 'inline-block';
+            pronunciationStartBtn.textContent = '🎙️ 開始錄音 (模擬)';
+        }
+
+        function mockPronunciationCheck() {
+            pronunciationStartBtn.disabled = true;
+            pronunciationStartBtn.textContent = '...辨識中...';
+            pronunciationFeedbackEl.textContent = '';
+
+            setTimeout(() => {
+                const randomScore = Math.floor(Math.random() * 10) + 90; // 模擬 90-100 分
+                if (randomScore > 95) {
+                    pronunciationFeedbackEl.textContent = `⭐ 發音極佳! (${randomScore}/100)`;
+                    pronunciationFeedbackEl.classList.remove('text-red-500');
+                    pronunciationFeedbackEl.classList.add('text-green-500');
+                } else {
+                    pronunciationFeedbackEl.textContent = `👍 發音不錯! (${randomScore}/100)`;
+                    pronunciationFeedbackEl.classList.remove('text-red-500');
+                    pronunciationFeedbackEl.classList.add('text-indigo-500');
+                }
+                pronunciationNextBtn.disabled = false;
+                pronunciationStartBtn.textContent = '✅ 已完成';
+            }, 1500);
+        }
+
+        function nextPronunciationWord() {
+            currentPronunciationIndex++;
+            renderPronunciationWord();
+        }
+
+        // ====================================================================
+        // --- 遊戲 8: 詞彙接龍 (Word Chain) 邏輯 ---
+        // ====================================================================
+
+        function initWordChainGame() {
+            wordChainWords = wordPairs.map(p => p.word.toUpperCase());
+            wordChainTurn = 1;
+            wordChainUsedWords = new Set();
+            wordChainSubmitBtn.onclick = checkWordChainAnswer;
+            document.getElementById('word_chain-restart-btn').onclick = initWordChainGame;
+            wordChainInputEl.onkeyup = (e) => { if (e.key === 'Enter' && !wordChainSubmitBtn.disabled) checkWordChainAnswer(); };
+            
+            // 隨機選一個起始單字
+            const startWord = wordChainWords[Math.floor(Math.random() * wordChainWords.length)];
+            wordChainUsedWords.add(startWord);
+            wordChainLastWord = startWord;
+            
+            renderWordChain();
+        }
+        
+        function renderWordChain() {
+            wordChainTurnEl.textContent = wordChainTurn;
+            wordChainCurrentWordEl.textContent = wordChainLastWord;
+            
+            const requiredLetter = wordChainLastWord.slice(-1).toUpperCase();
+            wordChainRequiredLetterEl.textContent = requiredLetter;
+            
+            wordChainInputEl.value = '';
+            wordChainInputEl.disabled = false;
+            wordChainSubmitBtn.disabled = false;
+            wordChainFeedbackEl.textContent = '';
+            wordChainFeedbackEl.classList.remove('text-green-500', 'text-red-500');
+            wordChainInputEl.focus();
+        }
+
+        function checkWordChainAnswer() {
+            const userGuess = wordChainInputEl.value.trim().toUpperCase();
+            const requiredLetter = wordChainLastWord.slice(-1).toUpperCase();
+            
+            // 1. 檢查是否為空
+            if (!userGuess) {
+                wordChainFeedbackEl.textContent = "請輸入一個單字。";
+                wordChainFeedbackEl.classList.add('text-red-500');
+                return;
+            }
+
+            // 2. 檢查是否以正確的字母開頭
+            if (userGuess[0] !== requiredLetter) {
+                wordChainFeedbackEl.textContent = `❌ 必須以 "${requiredLetter}" 開頭。`;
+                wordChainFeedbackEl.classList.add('text-red-500');
+                return;
+            }
+
+            // 3. 檢查是否在允許的詞庫中 (簡化：要求在 wordPairs 裡)
+            if (!wordChainWords.includes(userGuess)) {
+                wordChainFeedbackEl.textContent = `❌ 單字 "${userGuess}" 不在詞庫中，請換一個。`;
+                wordChainFeedbackEl.classList.add('text-red-500');
+                return;
+            }
+
+            // 4. 檢查是否已被使用
+            if (wordChainUsedWords.has(userGuess)) {
+                wordChainFeedbackEl.textContent = `❌ 單字 "${userGuess}" 已經被使用過了！`;
+                wordChainFeedbackEl.classList.add('text-red-500');
+                return;
+            }
+
+            // 成功：進入下一回合 (玩家回合結束)
+            wordChainUsedWords.add(userGuess);
+            wordChainLastWord = userGuess;
+            wordChainTurn++;
+            wordChainFeedbackEl.textContent = `✅ 您的單字: ${userGuess}! 換電腦了...`;
+            wordChainFeedbackEl.classList.remove('text-red-500');
+            wordChainFeedbackEl.classList.add('text-green-500');
+            wordChainSubmitBtn.disabled = true;
+            wordChainInputEl.disabled = true;
+
+            setTimeout(aiTurn, 1500);
+        }
+        
+        function aiTurn() {
+            const requiredLetter = wordChainLastWord.slice(-1).toUpperCase();
+            
+            // AI 邏輯：從詞庫中找出符合規則且未被使用的單字
+            const possibleWords = wordChainWords.filter(word => 
+                word[0] === requiredLetter && !wordChainUsedWords.has(word)
+            );
+
+            if (possibleWords.length > 0) {
+                // 隨機選擇一個 AI 單字
+                const aiWord = possibleWords[Math.floor(Math.random() * possibleWords.length)];
+                wordChainUsedWords.add(aiWord);
+                wordChainLastWord = aiWord;
+                wordChainTurn++;
+
+                wordChainFeedbackEl.textContent = `🤖 AI 接龍: ${aiWord}! 您的回合。`;
+                renderWordChain(); // 重新渲染並啟用輸入
+            } else {
+                // AI 輸了
+                wordChainFeedbackEl.textContent = "🎉 恭喜！電腦接不上單字了。您贏了！";
+                wordChainFeedbackEl.classList.remove('text-green-500', 'text-indigo-500');
+                wordChainFeedbackEl.classList.add('text-success-color');
+                wordChainSubmitBtn.disabled = true;
+                wordChainInputEl.disabled = true;
+            }
+        }
+
+        // ====================================================================
+        // --- 遊戲 9: 同義詞大作戰 (Synonym Battle) 邏輯 ---
+        // ====================================================================
+        
+        function initSynonymBattleGame() {
+            synonymWords = wordPairs.map(p => ({ word: p.word.toUpperCase(), synonym: p.synonym.toUpperCase() }));
+            shuffle(synonymWords);
+            currentSynonymIndex = 0;
+            synonymCheckBtn.onclick = checkSynonymAnswer;
+            synonymNextBtn.onclick = nextSynonymWord;
+            synonymInputEl.onkeyup = (e) => { if (e.key === 'Enter' && !synonymCheckBtn.disabled) checkSynonymAnswer(); };
+            renderSynonymWord();
+        }
+
+        function renderSynonymWord() {
+            synonymCountEl.textContent = `${currentSynonymIndex + 1}/${synonymWords.length}`;
+            synonymFeedbackEl.textContent = '';
+            synonymCheckBtn.disabled = false;
+            synonymNextBtn.disabled = true;
+            synonymInputEl.disabled = false;
+            
+            if (currentSynonymIndex >= synonymWords.length) {
+                synonymWordEl.innerHTML = "<span class='text-4xl text-green-600'>挑戰完成！</span>";
+                synonymCheckBtn.style.display = 'none';
+                synonymNextBtn.style.display = 'none';
+                synonymInputEl.style.display = 'none';
+                return;
+            }
+
+            const wordData = synonymWords[currentSynonymIndex];
+            synonymWordEl.textContent = wordData.word;
+            
+            synonymInputEl.value = '';
+            synonymInputEl.style.display = 'block';
+            synonymCheckBtn.style.display = 'inline-block';
+            synonymNextBtn.style.display = 'inline-block';
+            synonymInputEl.focus();
+        }
+
+        function checkSynonymAnswer() {
+            const userGuess = synonymInputEl.value.trim().toUpperCase();
+            const correctSynonym = synonymWords[currentSynonymIndex].synonym;
+            
+            if (userGuess === correctSynonym) {
+                synonymFeedbackEl.textContent = `✅ 正確！ (${correctSynonym})`;
+                synonymFeedbackEl.classList.remove('text-red-500');
+                synonymFeedbackEl.classList.add('text-green-500');
+                synonymCheckBtn.disabled = true;
+                synonymNextBtn.disabled = false;
+                synonymInputEl.disabled = true;
+            } else {
+                synonymFeedbackEl.textContent = `❌ 錯誤，答案是：${correctSynonym}。`;
+                synonymFeedbackEl.classList.remove('text-green-500');
+                synonymFeedbackEl.classList.add('text-red-500');
+                // 猜錯也跳下一題，防止無限猜測
+                synonymCheckBtn.disabled = true;
+                synonymNextBtn.disabled = false;
+                synonymInputEl.disabled = true;
+            }
+        }
+
+        function nextSynonymWord() {
+            currentSynonymIndex++;
+            renderSynonymWord();
+        }
+
+        // ====================================================================
+        // --- 遊戲 10: 每日單字 (Daily Word) 邏輯 ---
+        // ====================================================================
+
+        function initDailyWordGame() {
+            // 根據今天的日期決定每日單字 (確保每天只出現一次)
+            const today = new Date();
+            const dayIndex = today.getDate() % wordPairs.length;
+            const dailyWord = wordPairs[dayIndex];
+            
+            dailyWordWordEl.textContent = dailyWord.word;
+            dailyWordMeaningEl.textContent = dailyWord.meaning;
+            dailyWordSentenceEl.textContent = dailyWord.sentence.replace('___', dailyWord.word);
+        }
+
+
+        // --- 初始化與事件監聽器 (Back Buttons) ---
+        
+        window.onload = function() {
+            // Memory Game controls
+            resetButton.addEventListener('click', initMemoryGame);
+            modalResetButton.addEventListener('click', () => { modal.style.display = 'none'; initMemoryGame(); });
+            document.getElementById('memory-back-button').addEventListener('click', () => showPage('home'));
+
+            // Back buttons for all games
+            document.getElementById('flashcard-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('jumble-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('listening-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('fill_in-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('scramble-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('pronunciation-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('word_chain-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('synonym-back-button').addEventListener('click', () => showPage('home'));
+            document.getElementById('daily_word-back-button').addEventListener('click', () => showPage('home'));
+
+            // Initial view is 'home'
+            showPage('home'); 
+        };
+
+    </script>
+</body>
+</html>
