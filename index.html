@@ -4,7 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Amazing Animals - 記憶翻牌遊戲</title>
+    <!-- 引入 Noto Sans TC 字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 設定 Tailwind 使用 Noto Sans TC 作為預設無襯線字體
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         /* 卡片 3D 翻轉效果的 CSS 設定 */
         .perspective {
